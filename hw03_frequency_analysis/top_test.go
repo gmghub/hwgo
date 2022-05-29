@@ -7,7 +7,7 @@ import (
 )
 
 // Change to true if needed.
-var taskWithAsteriskIsCompleted = false
+var taskWithAsteriskIsCompleted = true
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -42,6 +42,38 @@ var text = `Как видите, он  спускается  по  лестни�
 	иногда,  особенно  когда  папа  дома,  он больше любит тихонько
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
+
+var testcases = []struct {
+	name     string
+	text     string
+	expected []string
+}{
+	{
+		name:     "task example",
+		text:     "cat and dog, one dog,two cats and one man",
+		expected: []string{"and", "one", "cat", "cats", "dog", "dog,two", "man"},
+	},
+	{
+		name:     "test for 10+ equal freqs",
+		text:     "cat cat and and dog dog zero zero one one two two cats cats man man a rat rat snow snow big big",
+		expected: []string{"and", "big", "cat", "cats", "dog", "man", "one", "rat", "snow", "two"},
+	},
+	{
+		name:     "test for 1 repeating word",
+		text:     "cat cat cat cat cat cat cat cat cat cat cat",
+		expected: []string{"cat"},
+	},
+	{
+		name:     "test for 1 repeating word with syntax variants",
+		text:     "Нога нога нога! нога нога, 'нога'",
+		expected: []string{"нога"},
+	},
+	{
+		name:     "test for 1 repeating word with a hyphen",
+		text:     "какой-то какойто",
+		expected: []string{"какой-то", "какойто"},
+	},
+}
 
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
@@ -79,4 +111,13 @@ func TestTop10(t *testing.T) {
 			require.Equal(t, expected, Top10(text))
 		}
 	})
+
+	if !taskWithAsteriskIsCompleted {
+		return
+	}
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			require.Equal(t, c.expected, Top10(c.text))
+		})
+	}
 }
