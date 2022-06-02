@@ -9,10 +9,27 @@ import (
 func TestList(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
 		l := NewList()
-
 		require.Equal(t, 0, l.Len())
 		require.Nil(t, l.Front())
 		require.Nil(t, l.Back())
+	})
+
+	t.Run("simple", func(t *testing.T) {
+		l := NewList()
+		l.PushFront(11) // [11]
+		l.PushFront(10) // [10, 11]
+		l.PushFront(9)  // [9, 10, 11]
+
+		first := l.Front()
+		l.Remove(first)
+		l.Remove(first)
+		require.Equal(t, 2, l.Len())
+
+		last := l.Back()
+		l.Remove(last)
+		l.Remove(last)
+		require.Equal(t, 1, l.Len())
+		require.Equal(t, 10, l.Front().Value)
 	})
 
 	t.Run("complex", func(t *testing.T) {
@@ -41,7 +58,6 @@ func TestList(t *testing.T) {
 
 		l.MoveToFront(l.Front()) // [80, 60, 40, 10, 30, 50, 70]
 		l.MoveToFront(l.Back())  // [70, 80, 60, 40, 10, 30, 50]
-
 		elems := make([]int, 0, l.Len())
 		for i := l.Front(); i != nil; i = i.Next {
 			elems = append(elems, i.Value.(int))
