@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"runtime"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -33,7 +34,6 @@ func TestRun(t *testing.T) {
 		workersCount := 10
 		maxErrorsCount := 23
 		err := Run(tasks, workersCount, maxErrorsCount)
-
 		require.Truef(t, errors.Is(err, ErrErrorsLimitExceeded), "actual err - %v", err)
 		require.LessOrEqual(t, runTasksCount, int32(workersCount+maxErrorsCount), "extra tasks were started")
 	})
@@ -66,5 +66,85 @@ func TestRun(t *testing.T) {
 
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
+	})
+
+	t.Run("invalid or empty values of arguments", func(t *testing.T) {
+		tasks := make([]Task, 0)
+		var err error
+		err = Run(tasks, 10, 10)
+		require.Nilf(t, err, "not nil on empty task list")
+
+		err = Run(tasks, 0, 10)
+		require.Truef(t, errors.Is(err, ErrInvalidArgument), "not error on zero N")
+
+		err = Run(tasks, -1, 10)
+		require.Truef(t, errors.Is(err, ErrInvalidArgument), "not error on negative N")
+	})
+
+	t.Run("test zero or negative M", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		tasksCount := 50
+		tasks := make([]Task, 0, tasksCount)
+
+		var runTasksCount int32
+
+		for i := 0; i < tasksCount; i++ {
+			err := fmt.Errorf("error from task %d", i)
+			tasks = append(tasks, func() error {
+				time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+				atomic.AddInt32(&runTasksCount, 1)
+				return err
+			})
+		}
+
+		workersCount := 10
+		maxErrorsCount := 0
+		err := Run(tasks, workersCount, maxErrorsCount)
+		require.Nilf(t, err, "should be nil on M == 0")
+
+		workersCount = 10
+		maxErrorsCount = -1
+		runTasksCount = 0
+		err = Run(tasks, workersCount, maxErrorsCount)
+		require.Nilf(t, err, "should be nil on M < 0")
+	})
+
+	t.Run("test concurrency execution with no sleep", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		tasksCount := 50
+		tasks := make([]Task, 0, tasksCount)
+
+		var runTasksCount int32
+		var sumTime int64
+
+		for i := 0; i < tasksCount; i++ {
+			tasks = append(tasks, func() error {
+				now := time.Now()
+				atomic.AddInt32(&runTasksCount, 1)
+				elapsed := int64(time.Since(now))
+				atomic.AddInt64(&sumTime, elapsed)
+				return nil
+			})
+		}
+
+		workersCount := 10
+		maxErrorsCount := 1
+
+		runtime.GOMAXPROCS(1)
+		start := time.Now()
+		err := Run(tasks, workersCount, maxErrorsCount)
+		elapsedTimeSerially := int64(time.Since(start))
+		require.NoError(t, err)
+		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
+
+		runTasksCount = 0
+		runtime.GOMAXPROCS(4)
+		start = time.Now()
+		err = Run(tasks, workersCount, maxErrorsCount)
+		elapsedTimeConcurrently := int64(time.Since(start))
+		require.NoError(t, err)
+		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
+
+		require.Less(t, elapsedTimeConcurrently, elapsedTimeSerially/2, "tasks were run sequentially?")
 	})
 }
