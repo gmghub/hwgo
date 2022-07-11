@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"os"
 )
 
 var (
@@ -18,5 +20,16 @@ func init() {
 
 func main() {
 	flag.Parse()
-	// Place your code here.
+
+	logInfo := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime)
+	logError := log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime)
+	logInfo.Printf("copying from=%s to=%s offset=%d limit=%d", from, to, offset, limit)
+
+	err := Copy(from, to, offset, limit)
+	if err != nil {
+		logError.Print(err)
+		os.Exit(1)
+	}
+	logInfo.Print("success")
+	os.Exit(0)
 }
