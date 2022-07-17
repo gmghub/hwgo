@@ -3,29 +3,29 @@ package main
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadDir(t *testing.T) {
 	t.Run("empty dir name", func(t *testing.T) {
 		dir := ""
 		env, err := ReadDir(dir)
-		assert.Nil(t, env)
-		assert.ErrorIs(t, err, ErrReadingEnvDir)
+		require.Nil(t, env)
+		require.ErrorIs(t, err, ErrReadingEnvDir)
 	})
 
 	t.Run("dir not exists", func(t *testing.T) {
 		dir := "notexists"
 		env, err := ReadDir(dir)
-		assert.Nil(t, env)
-		assert.ErrorIs(t, err, ErrReadingEnvDir)
+		require.Nil(t, env)
+		require.ErrorIs(t, err, ErrReadingEnvDir)
 	})
 
 	t.Run("path is not a directory", func(t *testing.T) {
 		dir := "testdata/echo.sh"
 		env, err := ReadDir(dir)
-		assert.Nil(t, env)
-		assert.ErrorIs(t, err, ErrNotDirectory)
+		require.Nil(t, env)
+		require.ErrorIs(t, err, ErrNotDirectory)
 	})
 
 	t.Run("dir exists and has keys", func(t *testing.T) {
@@ -38,9 +38,9 @@ func TestReadDir(t *testing.T) {
 			"UNSET": EnvValue{Value: "", NeedRemove: true},
 		}
 		env, err := ReadDir(dir)
-		assert.Nil(t, err)
+		require.Nil(t, err)
 		for k, v := range expected {
-			assert.Equal(t, v, env[k], "not valid env value key = %v, %v != %v", k, v, env[k])
+			require.Equal(t, v, env[k], "not valid env value key = %v, %v != %v", k, v, env[k])
 		}
 	})
 }

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRunCmd(t *testing.T) {
@@ -17,19 +17,19 @@ func TestRunCmd(t *testing.T) {
 	t.Run("empty command", func(t *testing.T) {
 		cmd = []string{}
 		code = RunCmd(cmd, env)
-		assert.Equal(t, 111, code)
+		require.Equal(t, 111, code)
 	})
 
 	t.Run("command name only", func(t *testing.T) {
 		cmd = []string{"echo"}
 		code = RunCmd(cmd, env)
-		assert.Equal(t, 0, code)
+		require.Equal(t, 0, code)
 	})
 
 	t.Run("command with args", func(t *testing.T) {
 		cmd = []string{"echo", "123", "321"}
 		code = RunCmd(cmd, env)
-		assert.Equal(t, 0, code)
+		require.Equal(t, 0, code)
 	})
 
 	t.Run("command with env vars", func(t *testing.T) {
@@ -40,10 +40,10 @@ func TestRunCmd(t *testing.T) {
 		}
 		cmd = []string{"testdata/echo.sh"}
 		code = RunCmd(cmd, env)
-		assert.Equal(t, 0, code)
+		require.Equal(t, 0, code)
 		osEnv := os.Environ()
-		assert.Contains(t, osEnv, "HELLO=hello")
-		assert.Contains(t, osEnv, "BAR=bar")
-		assert.Contains(t, osEnv, "FOO=foo")
+		require.Contains(t, osEnv, "HELLO=hello")
+		require.Contains(t, osEnv, "BAR=bar")
+		require.Contains(t, osEnv, "FOO=foo")
 	})
 }
